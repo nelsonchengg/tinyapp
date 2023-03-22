@@ -49,8 +49,13 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body["longURL"];
-  res.redirect("/urls/"+shortURL);
+  res.redirect(`/urls/${shortURL}`);
 });
+
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id];
+  res.redirect(`/urls`);
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
