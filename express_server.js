@@ -11,9 +11,9 @@ const urlDatabase = {
 
 function generateRandomString() {
   let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
   for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random()*characters.length));
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
 }
@@ -55,17 +55,21 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
-})
+});
 
 app.post("/urls/:id/edit", (req, res) => {
   res.redirect(`/urls/${req.params.id}`);
-})
+});
 
 app.post("/urls/:id", (req, res) => {
   const newURL = req.body.longURL;
   urlDatabase[req.params.id] = newURL;
   res.redirect(`/urls`);
-})
+});
+
+app.post("/login", (req, res) => {
+  res.cookie(`username`, req.body.username).redirect(`/urls`);
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
