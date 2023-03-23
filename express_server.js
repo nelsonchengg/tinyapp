@@ -30,12 +30,12 @@ const generateRandomString = function() {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
-}
+};
 
 const getUserByEmail = function(email) {
   for (const id in users) {
     if (email === users[id]["email"]) {
-      return users;
+      return users[id];
     }
   }
   return null;
@@ -76,6 +76,11 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]] };
+  res.render("urls_login", templateVars);
+});
+
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body["longURL"];
@@ -84,7 +89,7 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
-  res.redirect(`/urls`);
+  res.redirect("/urls");
 });
 
 app.post("/urls/:id/edit", (req, res) => {
@@ -94,28 +99,40 @@ app.post("/urls/:id/edit", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const newURL = req.body.longURL;
   urlDatabase[req.params.id] = newURL;
-  res.redirect(`/urls`);
+  res.redirect("/urls");
 });
 
 app.post("/login", (req, res) => {
-  res.cookie(`username`, req.body.username).redirect(`/urls`);
+  if (req.body.email === "" || req.body.password === "") {
+    return res.status(403).send("Email or Password are undefined");
+  }
+  const user = getUserByEmail(req.body.email);
+  console.log('user', user) // id email password
+  if (!user) {
+    return res.status(403).send("User Not Found");
+  }
+  if (req.body.password !== user["password"]) {
+    return res.status(403).send("Password is incorrect");
+  }
+  res.cookie("user_id", user.id).redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie(`user_id`).redirect(`/urls`);
+  res.clearCookie("user_id").redirect('/login');
 });
 
 app.post("/register", (req, res) => {
   if (req.body.email === "" || req.body.password === "") {
-    res.status(400).send("Email or Password are undefined");
+    return res.status(403).send("Email or Password are undefined");
   }
-  let user = getUserByEmail(req.body.email);
+  const user = getUserByEmail(req.body.email);
   if (user) {
-    res.status(400).send("User already exists")
+    return res.status(403).send("User already exists");
   }
-  let userId = generateRandomString();
+  const userId = generateRandomString();
   users[userId] = { id: userId, email: req.body.email, password: req.body.password };
-  res.cookie(`user_id`, userId).redirect(`/urls`);
+  console.log("users", users)
+  return res.cookie("user_id", userId).redirect("/urls");
 });
 
 app.listen(PORT, () => {
