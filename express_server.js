@@ -62,6 +62,9 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.redirect("/login");
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
@@ -69,6 +72,14 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]], id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
+});
+
+app.get("/u/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    return res.send("ShortURL is not in the database")
+  }
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
 });
 
 app.get("/register", (req, res) => {
@@ -82,7 +93,10 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  let shortURL = generateRandomString();
+  if (!req.cookies["user_id"]) {
+    return res.send("You are not logged in!\n");
+  }
+  const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body["longURL"];
   res.redirect(`/urls/${shortURL}`);
 });
@@ -107,7 +121,6 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Email or Password are undefined");
   }
   const user = getUserByEmail(req.body.email);
-  console.log('user', user) // id email password
   if (!user) {
     return res.status(403).send("User Not Found");
   }
@@ -131,8 +144,7 @@ app.post("/register", (req, res) => {
   }
   const userId = generateRandomString();
   users[userId] = { id: userId, email: req.body.email, password: req.body.password };
-  console.log("users", users)
-  return res.cookie("user_id", userId).redirect("/urls");
+  res.cookie("user_id", userId).redirect("/urls");
 });
 
 app.listen(PORT, () => {
