@@ -1,35 +1,12 @@
 const express = require("express");
 const cookieSession = require("cookie-session");
 const { generateRandomString, getUserByEmail, urlsForUser } = require("./helpers")
+const { urlDatabase, users } = require("./database")
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
-
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-};
-
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-};
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -37,8 +14,7 @@ app.use(cookieSession({
   name: 'session',
   keys: ["key1", "key2"],
 
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  maxAge: 24 * 60 * 60 * 1000
 }));
 
 app.get("/", (req, res) => {
