@@ -61,7 +61,7 @@ app.get("/urls/:id", (req, res) => {
     return res.send("ShortURL is not in the database");
   }
 
-  if (!urlsForUser(req.session["user_id"], urlDatabase)[req.params.id]) {
+  if (!urlsForUser(req.session["user_id"], urlDatabase[req.params.id])) {
     return res.send("You don't own this");
   }
   const templateVars = { user: users[req.session["user_id"]], id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
@@ -77,7 +77,7 @@ app.post("/urls/:id", (req, res) => {
     return res.send("ShortURL is not in the database");
   }
 
-  if (!urlsForUser(req.session["user_id"], urlDatabase)[req.params.id]) {
+  if (!urlsForUser(req.session["user_id"], urlDatabase[req.params.id])) {
     return res.send("You don't own this");
   }
   const newURL = req.body.longURL;
@@ -150,10 +150,10 @@ app.post("/urls/:id/delete", (req, res) => {
     return res.send("ShortURL is not in the database");
   }
 
-  if (!urlsForUser(req.session["user_id"], urlDatabase)[req.params.id]) {
+  if (!urlsForUser(req.session["user_id"], urlDatabase[req.params.id])) {
     return res.send("You don't own this");
   }
-  delete urlDatabase[req.params.id];
+  delete urlDatabase[req.params.id]; 
   res.redirect("/urls");
 });
 
