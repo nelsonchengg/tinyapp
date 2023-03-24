@@ -1,7 +1,7 @@
 const express = require("express");
 const cookieSession = require("cookie-session");
-const { generateRandomString, getUserByEmail, urlsForUser } = require("./helpers")
-const { urlDatabase, users } = require("./database")
+const { generateRandomString, getUserByEmail, urlsForUser } = require("./helpers");
+const { urlDatabase, users } = require("./database");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080;
@@ -19,8 +19,8 @@ app.use(cookieSession({
 
 app.get("/", (req, res) => {
   if (req.session.user_id) {
-    return res.redirect("/urls")
-  } 
+    return res.redirect("/urls");
+  }
   res.redirect("/login");
 });
 
@@ -153,13 +153,13 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!urlsForUser(req.session["user_id"], urlDatabase[req.params.id])) {
     return res.send("You don't own this");
   }
-  delete urlDatabase[req.params.id]; 
+  delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
   req.session = null;
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
