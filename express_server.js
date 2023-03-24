@@ -18,7 +18,7 @@ app.use(cookieSession({
 }));
 
 app.get("/", (req, res) => {
-  if (req.session.user_id) {
+  if (req.session["user_id"]) {
     return res.redirect("/urls");
   }
   res.redirect("/login");
@@ -95,7 +95,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const userID = req.session.user_id;
+  const userID = req.session["user_id"];
   if (userID) {
     return res.redirect('/urls');
   }
@@ -118,7 +118,7 @@ app.post("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const userID = req.session.user_id;
+  const userID = req.session["user_id"];
   if (userID) {
     return res.redirect('/urls');
   }
