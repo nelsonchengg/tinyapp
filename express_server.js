@@ -66,11 +66,19 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  const userID = req.session.user_id;
+  if (userID) {
+    return res.redirect('/urls');
+  }
   const templateVars = { user: users[req.session["user_id"]] };
   res.render("urls_register", templateVars);
 });
 
 app.get("/login", (req, res) => {
+  const userID = req.session.user_id;
+  if (userID) {
+    return res.redirect('/urls');
+  }
   const templateVars = { user: users[req.session["user_id"]] };
   res.render("urls_login", templateVars);
 });
