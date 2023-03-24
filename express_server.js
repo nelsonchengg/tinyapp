@@ -32,6 +32,18 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+app.post("/urls", (req, res) => {
+  if (!req.session["user_id"]) {
+    return res.send("You are not logged in!\n");
+  }
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = {
+    longURL: req.body["longURL"],
+    userID: req.session["user_id"]
+  };
+  res.redirect(`/urls/${shortURL}`);
+});
+
 app.get("/urls/new", (req, res) => {
   if (!req.session["user_id"]) {
     return res.redirect("/login");
@@ -56,6 +68,23 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.post("/urls/:id", (req, res) => {
+  if (!req.session["user_id"]) {
+    return res.send("You are not logged in!\n");
+  }
+
+  if (!urlDatabase[req.params.id]) {
+    return res.send("ShortURL is not in the database");
+  }
+
+  if (!urlsForUser(req.session["user_id"], urlDatabase)[req.params.id]) {
+    return res.send("You don't own this");
+  }
+  const newURL = req.body.longURL;
+  urlDatabase[req.params.id].longURL = newURL;
+  res.redirect("/urls");
+});
+
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   if (!urlDatabase[id].longURL) {
@@ -74,6 +103,20 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+app.post("/register", (req, res) => {
+  if (req.body.email === "" || req.body.password === "") {
+    return res.status(403).send("Email or Password are undefined");
+  }
+  const user = getUserByEmail(req.body.email, users);
+  if (user) {
+    return res.status(403).send("User already exists");
+  }
+  const userId = generateRandomString();
+  users[userId] = { id: userId, email: req.body.email, password: bcrypt.hashSync(req.body.password, 10) };
+  req.session["user_id"] = userId;
+  res.redirect("/urls");
+});
+
 app.get("/login", (req, res) => {
   const userID = req.session.user_id;
   if (userID) {
@@ -83,16 +126,19 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
-app.post("/urls", (req, res) => {
-  if (!req.session["user_id"]) {
-    return res.send("You are not logged in!\n");
+app.post("/login", (req, res) => {
+  if (req.body.email === "" || req.body.password === "") {
+    return res.status(403).send("Email or Password are undefined");
   }
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {
-    longURL: req.body["longURL"],
-    userID: req.session["user_id"]
-  };
-  res.redirect(`/urls/${shortURL}`);
+  const user = getUserByEmail(req.body.email, users);
+  if (!user) {
+    return res.status(403).send("User Not Found");
+  }
+  if (!bcrypt.compareSync(req.body.password, user.password)) {
+    return res.status(403).send("Password is incorrect");
+  }
+  req.session["user_id"] = user.id;
+  res.redirect("/urls");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
@@ -111,55 +157,9 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:id", (req, res) => {
-  if (!req.session["user_id"]) {
-    return res.send("You are not logged in!\n");
-  }
-
-  if (!urlDatabase[req.params.id]) {
-    return res.send("ShortURL is not in the database");
-  }
-
-  if (!urlsForUser(req.session["user_id"], urlDatabase)[req.params.id]) {
-    return res.send("You don't own this");
-  }
-  const newURL = req.body.longURL;
-  urlDatabase[req.params.id].longURL = newURL;
-  res.redirect("/urls");
-});
-
-app.post("/login", (req, res) => {
-  if (req.body.email === "" || req.body.password === "") {
-    return res.status(403).send("Email or Password are undefined");
-  }
-  const user = getUserByEmail(req.body.email, users);
-  if (!user) {
-    return res.status(403).send("User Not Found");
-  }
-  if (!bcrypt.compareSync(req.body.password, user.password)) {
-    return res.status(403).send("Password is incorrect");
-  }
-  req.session["user_id"] = user.id;
-  res.redirect("/urls");
-});
-
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/urls")
-});
-
-app.post("/register", (req, res) => {
-  if (req.body.email === "" || req.body.password === "") {
-    return res.status(403).send("Email or Password are undefined");
-  }
-  const user = getUserByEmail(req.body.email, users);
-  if (user) {
-    return res.status(403).send("User already exists");
-  }
-  const userId = generateRandomString();
-  users[userId] = { id: userId, email: req.body.email, password: bcrypt.hashSync(req.body.password, 10) };
-  req.session["user_id"] = userId;
-  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
