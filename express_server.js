@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080;
 
@@ -74,7 +75,7 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
-    return res.send("You are not logged in!\n");
+    return res.redirect("/login");
   }
   const templateVars = { user: users[req.cookies["user_id"]], urls: urlsForUser(req.cookies["user_id"]) };
   res.render("urls_index", templateVars);
@@ -96,9 +97,9 @@ app.get("/urls/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     return res.send("ShortURL is not in the database");
   }
-  
+
   if (!urlsForUser(req.cookies["user_id"])[req.params.id]) {
-    return res.send("You don't own this")
+    return res.send("You don't own this");
   }
   const templateVars = { user: users[req.cookies["user_id"]], id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
   res.render("urls_show", templateVars);
@@ -143,9 +144,9 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     return res.send("ShortURL is not in the database");
   }
-  
+
   if (!urlsForUser(req.cookies["user_id"])[req.params.id]) {
-    return res.send("You don't own this")
+    return res.send("You don't own this");
   }
   delete urlDatabase[id];
   res.redirect("/urls");
@@ -159,9 +160,9 @@ app.post("/urls/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     return res.send("ShortURL is not in the database");
   }
-  
+
   if (!urlsForUser(req.cookies["user_id"])[req.params.id]) {
-    return res.send("You don't own this")
+    return res.send("You don't own this");
   }
   const newURL = req.body.longURL;
   urlDatabase[req.params.id].longURL = newURL;
@@ -176,7 +177,7 @@ app.post("/login", (req, res) => {
   if (!user) {
     return res.status(403).send("User Not Found");
   }
-  if (req.body.password !== user["password"]) {
+  if (!bcrypt.compareSync(req.body.password, user.password)) {
     return res.status(403).send("Password is incorrect");
   }
   res.cookie("user_id", user.id).redirect("/urls");
@@ -195,7 +196,7 @@ app.post("/register", (req, res) => {
     return res.status(403).send("User already exists");
   }
   const userId = generateRandomString();
-  users[userId] = { id: userId, email: req.body.email, password: req.body.password };
+  users[userId] = { id: userId, email: req.body.email, password: bcrypt.hashSync(req.body.password, 10) };
   res.cookie("user_id", userId).redirect("/urls");
 });
 
