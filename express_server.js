@@ -32,18 +32,6 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-app.post("/urls", (req, res) => {
-  if (!req.session["user_id"]) {
-    return res.send("You are not logged in!\n");
-  }
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {
-    longURL: req.body["longURL"],
-    userID: req.session["user_id"]
-  };
-  res.redirect(`/urls/${shortURL}`);
-});
-
 app.get("/urls/new", (req, res) => {
   if (!req.session["user_id"]) {
     return res.redirect("/login");
@@ -61,11 +49,32 @@ app.get("/urls/:id", (req, res) => {
     return res.send("ShortURL is not in the database");
   }
 
-  if (!urlsForUser(req.session["user_id"], urlDatabase[req.params.id])) {
+  if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
     return res.send("You don't own this");
   }
   const templateVars = { user: users[req.session["user_id"]], id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
   res.render("urls_show", templateVars);
+});
+
+app.get("/u/:id", (req, res) => {
+  const id = req.params.id;
+  if (!urlDatabase[id]) {
+    return res.send("ShortURL is not in the database");
+  }
+  const longURL = urlDatabase[id].longURL;
+  res.redirect(longURL);
+});
+
+app.post("/urls", (req, res) => {
+  if (!req.session["user_id"]) {
+    return res.send("You are not logged in!\n");
+  }
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = {
+    longURL: req.body["longURL"],
+    userID: req.session["user_id"]
+  };
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.post("/urls/:id", (req, res) => {
@@ -77,7 +86,7 @@ app.post("/urls/:id", (req, res) => {
     return res.send("ShortURL is not in the database");
   }
 
-  if (!urlsForUser(req.session["user_id"], urlDatabase[req.params.id])) {
+  if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
     return res.send("You don't own this");
   }
   const newURL = req.body.longURL;
@@ -85,13 +94,20 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
-app.get("/u/:id", (req, res) => {
-  const id = req.params.id;
-  if (!urlDatabase[id].longURL) {
+app.post("/urls/:id/delete", (req, res) => {
+  if (!req.session["user_id"]) {
+    return res.send("You are not logged in!\n");
+  }
+
+  if (!urlDatabase[req.params.id]) {
     return res.send("ShortURL is not in the database");
   }
-  const longURL = urlDatabase[id].longURL;
-  res.redirect(longURL);
+
+  if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
+    return res.send("You don't own this");
+  }
+  delete urlDatabase[req.params.id];
+  res.redirect("/urls");
 });
 
 app.get("/register", (req, res) => {
@@ -138,22 +154,6 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Password is incorrect");
   }
   req.session["user_id"] = user.id;
-  res.redirect("/urls");
-});
-
-app.post("/urls/:id/delete", (req, res) => {
-  if (!req.session["user_id"]) {
-    return res.send("You are not logged in!\n");
-  }
-
-  if (!urlDatabase[req.params.id]) {
-    return res.send("ShortURL is not in the database");
-  }
-
-  if (!urlsForUser(req.session["user_id"], urlDatabase[req.params.id])) {
-    return res.send("You don't own this");
-  }
-  delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
 
